@@ -3,6 +3,8 @@ import os
 import dotenv
 from openai import OpenAI
 import tiktoken 
+from transformers import AutoTokenizer
+
 
 dotenv.load_dotenv()
 
@@ -18,6 +20,7 @@ class Chatbot:
         ]
         self.total_token = 0
         self.groq_api_key = os.getenv("GROQ_API_KEY")
+        self.hf_token = os.getenv("HF_TOKEN")
         self.client = Groq(api_key=self.groq_api_key)
         self.input_tokens = 0
         self.output_tokens = 0
@@ -62,8 +65,9 @@ class Chatbot:
 
 def main():
     chatbot = Chatbot()
-    encoding = tiktoken.get_encoding("cl100k_base")
-    # encoding = tiktoken.encoding_for_model("qwen/qwen3.8-27b")
+    # encoding = tiktoken.get_encoding("cl100k_base")
+    encoding = AutoTokenizer.from_pretrained('Qwen/Qwen3-0.6B', use_auth_token=chatbot.hf_token)
+
     while True: 
         input_text = input("Ask something! ").strip().lower()
 
@@ -72,6 +76,14 @@ def main():
         if token_count > chatbot.token_limit:
             print(f"Input text exceeds the maximum token limit of {chatbot.token_limit} tokens. Your input has {token_count} tokens.")
             continue
+
+        if not input_text:
+            print("Input text cannot be empty. Please enter a valid question.")
+            continue
+
+        if chatbot.total_token >= 20:
+            print("Total token limit reached. Please restart the program to continue.")
+            break
 
         if input_text == 'exit':
             break
